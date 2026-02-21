@@ -7,14 +7,12 @@ st.set_page_config(page_title="Registro Aliados CLS", page_icon="📝", layout="
 # --- ESTILO PARA CELULARES (DISEÑO DEDUCTIVO) ---
 st.markdown("""
     <style>
-    /* Estilo para los botones de carga de archivos */
     .stFileUploader section {
         padding: 10px !important;
         background-color: #f8f9fa !important;
         border: 1px dashed #01579b !important;
         border-radius: 10px !important;
     }
-    /* Estilo para el botón final */
     .stButton>button {
         width: 100%;
         height: 70px;
@@ -45,16 +43,16 @@ st.markdown("<p style='text-align: center;'><b>CONEXIÓN LOGÍSTICA SUR</b></p>"
 
 # --- FORMULARIO ---
 with st.form("form_registro"):
-    st.subheader("1. Datos del Fletero")
+    st.subheader("1. Datos Personales")
     nombre = st.text_input("Nombre y Apellido completo:")
     celular_fletero = st.text_input("Tu número de celular:")
     ciudad = st.text_input("Ciudad y Departamento:")
+    direccion = st.text_input("Domicilio y Nro de Casa:") # NUEVO CAMPO
 
     st.markdown("---")
     st.subheader("2. Documentación (Adjuntar Fotos)")
-    st.info("Tocá cada botón para sacar la foto o subirla desde tu galería.")
+    st.info("Tocá cada botón para sacar la foto con la cámara trasera o subirla de tu galería.")
     
-    # Todos cambiados a levantar fotos para máxima compatibilidad
     foto_ci = st.file_uploader("Adjuntar foto de Cédula", type=['png', 'jpg', 'jpeg'])
     foto_licencia = st.file_uploader("Adjuntar foto de Licencia de Conducir", type=['png', 'jpg', 'jpeg'])
     foto_libreta = st.file_uploader("Adjuntar foto de Libreta de Propiedad", type=['png', 'jpg', 'jpeg'])
@@ -70,16 +68,17 @@ with st.form("form_registro"):
 
 # --- LÓGICA DE ENVÍO ---
 if enviar:
-    if nombre and foto_ci and acepto:
+    if nombre and direccion and foto_ci and acepto:
         st.balloons()
         
-        # Armamos el mensaje para WhatsApp
+        # Armamos el mensaje para WhatsApp con el nuevo campo de domicilio
         resumen = (
             f"🚀 *NUEVO REGISTRO DE ALIADO*\n\n"
             f"👤 *Nombre:* {nombre}\n"
             f"📱 *Celular:* {celular_fletero}\n"
-            f"📍 *Ciudad:* {ciudad}\n\n"
-            f"✅ *Estado:* Fotos cargadas en sistema. Listo para enviar por acá."
+            f"📍 *Ciudad:* {ciudad}\n"
+            f"🏠 *Domicilio:* {direccion}\n\n"
+            f"✅ *Estado:* Fotos listas para enviar."
         )
         msg_codificado = urllib.parse.quote(resumen)
         
@@ -90,14 +89,14 @@ if enviar:
         st.markdown(f"""
             <div style="background-color: #f1f8e9; padding: 25px; border-radius: 15px; border: 2px solid #2e7d32; text-align: center;">
                 <h2 style="color: #2e7d32; margin-top:0;">¡TODO LISTO!</h2>
-                <p style="font-size: 18px;">Tocá el botón verde para enviarme tu ficha.<br><b>No olvides adjuntar todas las fotos en este chat de WhatsApp.</b></p>
+                <p style="font-size: 18px;">Tocá el botón verde para enviarme tu ficha.<br><b>No olvides adjuntar todas las fotos en el chat de WhatsApp que se va a abrir.</b></p>
                 <a href="{wa_url}" target="_blank" class="custom-btn">
-                    📲 ENVIAR A LEONARDO
+                    📲 ENVIAR FICHA A LEONARDO
                 </a>
             </div>
         """, unsafe_allow_html=True)
         
     else:
-        st.error("⚠️ Falta completar tu nombre, subir la Cédula o aceptar los términos.")
+        st.error("⚠️ Falta completar datos obligatorios (Nombre, Domicilio, Cédula o Términos).")
 
 st.sidebar.caption("CLS - Conexión Logística Sur 2026")
