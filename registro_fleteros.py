@@ -72,12 +72,12 @@ with st.form("registro_datos"):
     
     enviar = st.form_submit_button("✅ GENERAR FICHA Y FINALIZAR")
 
-# --- 3. LÓGICA DE ENVÍO ---
+# --- 3. LÓGICA DE ENVÍO (CONFIGURADO PARA GUSTAVO) ---
 if enviar:
     if acepto and nombre and celular:
         st.balloons()
         
-        # Resumen del contrato para que te quede en el chat de WhatsApp
+        # Resumen del contrato para el mensaje
         resumen_contrato = "Acepto Contrato CLS: Intermediación, Deslinde de Responsabilidad por carga y 15% comisión."
         
         texto_wa = (
@@ -88,22 +88,24 @@ if enviar:
             f"🏠 *Domicilio:* {domicilio}\n\n"
             f"📝 *CONTRATO:* {resumen_contrato}\n"
             f"---------------------------\n"
-            f"¡Hola Leonardo! Completé mi registro. Ahora te adjunto las fotos de mi Cédula, Licencia, Libreta y Seguro aquí debajo. 👇"
+            f"¡Hola! Completé mi registro para CLS. Ahora adjunto las fotos de mi documentación aquí debajo. 👇"
         )
         
-        wa_url = f"https://wa.me/59899417716?text={urllib.parse.quote(texto_wa)}"
+        # NÚMERO DE GUSTAVO ACTUALIZADO
+        nro_gustavo = "59899276396"
+        wa_url = f"https://wa.me/{nro_gustavo}?text={urllib.parse.quote(texto_wa)}"
         
         st.success("¡Datos procesados!")
         st.markdown(f"""
             <div style="background-color: #f1f8e9; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #2e7d32;">
                 <h3 style="color: #2e7d32;">¡PASO FINAL!</h3>
-                <p>Tocá el botón verde para enviarme tu ficha por WhatsApp y <b>adjuntame las fotos de la documentación en el chat.</b></p>
+                <p>Tocá el botón verde para enviar tu ficha y <b>adjuntá las fotos de la documentación en el chat.</b></p>
                 <a href="{wa_url}" target="_blank" class="btn-final">
-                    📲 ENVIAR FICHA A LEONARDO
+                    📲 ENVIAR FICHA DE REGISTRO
                 </a>
             </div>
         """, unsafe_allow_html=True)
     else:
         st.error("⚠️ Por favor, marcá que aceptás el contrato y completá tus datos.")
 
-st.sidebar.caption("CLS - Logística e Ingeniería 2026")
+st.sidebar.caption("CLS - Gestión Logística 2026")
