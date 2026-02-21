@@ -1,102 +1,100 @@
 import streamlit as st
 import urllib.parse
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Registro Aliados CLS", page_icon="📝", layout="centered")
+st.set_page_config(page_title="Registro Aliados CLS", page_icon="🚛", layout="centered")
 
-# --- ESTILO PARA CELULARES (DISEÑO DEDUCTIVO) ---
+# --- ESTILO PERSONALIZADO ---
 st.markdown("""
     <style>
-    .stFileUploader section {
-        padding: 10px !important;
-        background-color: #f8f9fa !important;
-        border: 1px dashed #01579b !important;
-        border-radius: 10px !important;
-    }
-    .stButton>button {
-        width: 100%;
-        height: 70px;
-        font-size: 20px;
-        font-weight: bold;
-        border-radius: 12px;
-        background-color: #01579b;
-        color: white;
-    }
-    .custom-btn {
-        display: block;
-        width: 100%;
-        padding: 20px;
-        background-color: #25d366;
-        color: white !important;
-        text-align: center;
-        font-weight: bold;
-        font-size: 22px;
-        text-decoration: none;
-        border-radius: 12px;
-        margin-top: 10px;
-    }
+    .stButton>button { width: 100%; height: 60px; font-weight: bold; background-color: #01579b; color: white; border-radius: 10px; }
+    .contrato { background-color: #f0f2f6; padding: 20px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 14px; height: 300px; overflow-y: scroll; margin-bottom: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: #01579b;'>📝 REGISTRO DE FLETEROS</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'><b>CONEXIÓN LOGÍSTICA SUR</b></p>", unsafe_allow_html=True)
+st.title("🚛 Registro de Fletero Aliado")
+st.write("Conexión Logística Sur")
 
-# --- FORMULARIO ---
-with st.form("form_registro"):
-    st.subheader("1. Datos Personales")
-    nombre = st.text_input("Nombre y Apellido completo:")
-    celular_fletero = st.text_input("Tu número de celular:")
-    ciudad = st.text_input("Ciudad y Departamento:")
-    direccion = st.text_input("Domicilio y Nro de Casa:") # NUEVO CAMPO
+# --- 1. EL CONTRATO (VISIBILIDAD PRIMERO) ---
+st.subheader("Términos y Condiciones del Servicio")
+contrato_texto = """
+**CONTRATO DE ADHESIÓN Y DESLINDE DE RESPONSABILIDAD - CLS**
 
-    st.markdown("---")
-    st.subheader("2. Documentación (Adjuntar Fotos)")
-    st.info("Tocá cada botón para sacar la foto con la cámara trasera o subirla de tu galería.")
+1. **NATURALEZA DEL VÍNCULO:** El Fletero acepta que Conexión Logística Sur (en adelante CLS) actúa únicamente como un nexo comercial y tecnológico entre el cliente y el transportista. No existe relación de dependencia laboral.
+2. **RESPONSABILIDAD POR LA CARGA:** El Fletero asume la responsabilidad total y absoluta por la integridad de la mercadería, botes o cualquier objeto transportado desde la carga hasta la entrega efectiva. CLS no responderá por daños, hurtos o accidentes.
+3. **COMISIÓN:** El Fletero se compromete a abonar el 15% del valor total del flete a CLS por concepto de gestión comercial.
+4. **DOCUMENTACIÓN:** El Fletero declara bajo juramento tener su vehículo, seguro de carga y documentación personal al día y en regla según las leyes de Uruguay.
+5. **ESTADO DEL VEHÍCULO:** Es responsabilidad del fletero mantener la unidad en óptimas condiciones mecánicas y de seguridad.
+"""
+st.markdown(f'<div class="contrato">{contrato_texto}</div>', unsafe_allow_html=True)
+
+# --- 2. FORMULARIO DE DATOS ---
+with st.form("registro_form"):
+    acepto = st.checkbox("HE LEÍDO Y ACEPTO TODOS LOS TÉRMINOS DEL CONTRATO ANTERIOR")
     
-    foto_ci = st.file_uploader("Adjuntar foto de Cédula", type=['png', 'jpg', 'jpeg'])
-    foto_licencia = st.file_uploader("Adjuntar foto de Licencia de Conducir", type=['png', 'jpg', 'jpeg'])
-    foto_libreta = st.file_uploader("Adjuntar foto de Libreta de Propiedad", type=['png', 'jpg', 'jpeg'])
-    foto_seguro = st.file_uploader("Adjuntar foto de Póliza de Seguro", type=['png', 'jpg', 'jpeg'])
-    foto_vehiculo = st.file_uploader("Adjuntar foto del Vehículo", type=['png', 'jpg', 'jpeg'])
-
     st.markdown("---")
-    st.subheader("3. Acuerdo Legal")
-    st.warning("Declaro que la documentación es verídica, soy responsable de la carga y acepto la comisión del 15% para CLS.")
-    acepto = st.checkbox("ACEPTO LOS TÉRMINOS Y CONDICIONES")
+    nombre = st.text_input("Nombre completo:")
+    celular = st.text_input("Celular:")
+    ciudad = st.text_input("Ciudad y Departamento:")
+    domicilio = st.text_input("Domicilio y Nro de Casa:")
+    
+    st.markdown("---")
+    st.subheader("Adjuntar Documentación")
+    f_ci = st.file_uploader("Foto de Cédula", type=['jpg','png','jpeg'])
+    f_lic = st.file_uploader("Foto de Licencia de Conducir", type=['jpg','png','jpeg'])
+    f_lib = st.file_uploader("Foto de Libreta de Propiedad", type=['jpg','png','jpeg'])
+    f_seg = st.file_uploader("Foto de Póliza de Seguro", type=['jpg','png','jpeg'])
+    f_veh = st.file_uploader("Foto del Vehículo", type=['jpg','png','jpeg'])
+    
+    enviar = st.form_submit_button("✅ ENVIAR REGISTRO")
 
-    enviar = st.form_submit_button("✅ GUARDAR DATOS")
+# --- 3. LÓGICA DE ENVÍO DE EMAIL ---
+def enviar_email(nombre, celular, ciudad, domicilio, archivos):
+    # Configura aquí tus datos de envío
+    remitente = "leopcpay@gmail.com"
+    destinatario = "leopcpay@gmail.com"
+    password = "TU_CONTRASEÑA_DE_APLICACION" # Ver nota abajo
 
-# --- LÓGICA DE ENVÍO ---
+    msg = MIMEMultipart()
+    msg['From'] = remitente
+    msg['To'] = destinatario
+    msg['Subject'] = f"NUEVO FLETERO: {nombre}"
+
+    cuerpo = f"Nuevo registro en CLS:\n\nNombre: {nombre}\nCelular: {celular}\nCiudad: {ciudad}\nDomicilio: {domicilio}"
+    msg.attach(MIMEText(cuerpo, 'plain'))
+
+    for nombre_archivo, contenido in archivos.items():
+        if contenido is not None:
+            part = MIMEBase('application', "octet-stream")
+            part.set_payload(contenido.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename={nombre_archivo}.jpg')
+            msg.attach(part)
+
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(remitente, password)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        st.error(f"Error al enviar email: {e}")
+        return False
+
 if enviar:
-    if nombre and direccion and foto_ci and acepto:
-        st.balloons()
+    if acepto and nombre and f_ci:
+        archivos = {"CI": f_ci, "Licencia": f_lic, "Libreta": f_lib, "Seguro": f_seg, "Vehiculo": f_veh}
+        exito = enviar_email(nombre, celular, ciudad, domicilio, archivos)
         
-        # Armamos el mensaje para WhatsApp con el nuevo campo de domicilio
-        resumen = (
-            f"🚀 *NUEVO REGISTRO DE ALIADO*\n\n"
-            f"👤 *Nombre:* {nombre}\n"
-            f"📱 *Celular:* {celular_fletero}\n"
-            f"📍 *Ciudad:* {ciudad}\n"
-            f"🏠 *Domicilio:* {direccion}\n\n"
-            f"✅ *Estado:* Fotos listas para enviar."
-        )
-        msg_codificado = urllib.parse.quote(resumen)
-        
-        tu_wa = "59899417716"
-        wa_url = f"https://wa.me/{tu_wa}?text={msg_codificado}"
-
-        st.markdown("---")
-        st.markdown(f"""
-            <div style="background-color: #f1f8e9; padding: 25px; border-radius: 15px; border: 2px solid #2e7d32; text-align: center;">
-                <h2 style="color: #2e7d32; margin-top:0;">¡TODO LISTO!</h2>
-                <p style="font-size: 18px;">Tocá el botón verde para enviarme tu ficha.<br><b>No olvides adjuntar todas las fotos en el chat de WhatsApp que se va a abrir.</b></p>
-                <a href="{wa_url}" target="_blank" class="custom-btn">
-                    📲 ENVIAR FICHA A LEONARDO
-                </a>
-            </div>
-        """, unsafe_allow_html=True)
-        
+        if exito:
+            st.balloons()
+            st.success(f"¡Registro enviado con éxito, {nombre}!")
+            st.info("Ya hemos recibido tu documentación en Conexión Logística Sur.")
     else:
-        st.error("⚠️ Falta completar datos obligatorios (Nombre, Domicilio, Cédula o Términos).")
-
-st.sidebar.caption("CLS - Conexión Logística Sur 2026")
+        st.warning("Por favor, acepta el contrato y completa los datos obligatorios.")
